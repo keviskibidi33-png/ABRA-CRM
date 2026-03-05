@@ -7,6 +7,8 @@ import type { AbraPayload } from '@/types'
 
 const DRAFT_KEY = 'abra_form_draft_v1'
 const DEBOUNCE_MS = 700
+const REVISORES = ['-', 'FABIAN LA ROSA'] as const
+const APROBADORES = ['-', 'IRMA COAQUIRA'] as const
 const TAMIZ_ROWS = [
     { pasante: '3', retenido: '2 1/2' },
     { pasante: '2 1/2', retenido: '2' },
@@ -15,6 +17,20 @@ const TAMIZ_ROWS = [
     { pasante: '1', retenido: '3/4' },
     { pasante: 'Total (*)', retenido: '' },
 ] as const
+
+const EQUIPO_OPTIONS = {
+    horno_codigo: ['-', 'EQP-0049'],
+    maquina_los_angeles_codigo: ['-', 'EQP-0043'],
+    balanza_1g_codigo: ['-', 'EQP-0054'],
+    malla_no_12_codigo: ['-', 'INS-0144'],
+    malla_no_4_codigo: ['-', 'INS-0053'],
+} as const
+
+const withCurrentOption = (value: string | null | undefined, base: readonly string[]) => {
+    const current = (value ?? '').trim()
+    if (!current || base.includes(current)) return base
+    return [...base, current]
+}
 
 type TamizFieldKey = 'gradacion_1_tamiz_g' | 'gradacion_2_tamiz_g' | 'gradacion_3_tamiz_g'
 type TripleFieldKey =
@@ -45,6 +61,13 @@ const parseNum = (v: string) => {
 }
 
 const getCurrentYearShort = () => new Date().getFullYear().toString().slice(-2)
+const formatTodayShortDate = () => {
+    const d = new Date()
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const yy = String(d.getFullYear()).slice(-2)
+    return `${dd}/${mm}/${yy}`
+}
 
 const normalizeMuestraCode = (raw: string): string => {
     const value = raw.trim().toUpperCase()
@@ -104,7 +127,7 @@ const getEnsayoId = () => {
 const initialState = (): AbraPayload => ({
     muestra: '',
     numero_ot: '',
-    fecha_ensayo: '',
+    fecha_ensayo: formatTodayShortDate(),
     realizado_por: '',
     masa_muestra_inicial_g: null,
     masa_muestra_inicial_seca_g: null,
@@ -122,16 +145,16 @@ const initialState = (): AbraPayload => ({
     item_e_diferencia_masa_g: empty3(),
     item_f_desgaste_pct: empty3(),
     item_perdida_lavado_pct: empty3(),
-    horno_codigo: 'EQP-0049',
-    maquina_los_angeles_codigo: 'EQP-0043',
-    balanza_1g_codigo: 'EQP-0054',
-    malla_no_12_codigo: 'INS-0144',
-    malla_no_4_codigo: 'INS-0053',
+    horno_codigo: '-',
+    maquina_los_angeles_codigo: '-',
+    balanza_1g_codigo: '-',
+    malla_no_12_codigo: '-',
+    malla_no_4_codigo: '-',
     observaciones: '',
     revisado_por: '-',
-    revisado_fecha: '',
+    revisado_fecha: formatTodayShortDate(),
     aprobado_por: '-',
-    aprobado_fecha: '',
+    aprobado_fecha: formatTodayShortDate(),
 })
 
 export default function AbraForm() {
@@ -535,27 +558,37 @@ export default function AbraForm() {
                                     <tr>
                                         <td className="border-t border-r border-slate-300 px-2 py-1">Horno</td>
                                         <td className="border-t border-r border-slate-300 p-1">
-                                            <input className={denseInputClass} value={form.horno_codigo ?? ''} onChange={(e) => setField('horno_codigo', e.target.value)} autoComplete="off" data-lpignore="true" />
+                                            <select className={denseInputClass} value={form.horno_codigo ?? '-'} onChange={(e) => setField('horno_codigo', e.target.value)}>
+                                                {withCurrentOption(form.horno_codigo, EQUIPO_OPTIONS.horno_codigo).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                                            </select>
                                         </td>
                                         <td className="border-t border-r border-slate-300 px-2 py-1">Malla No. 12</td>
                                         <td className="border-t border-slate-300 p-1">
-                                            <input className={denseInputClass} value={form.malla_no_12_codigo ?? ''} onChange={(e) => setField('malla_no_12_codigo', e.target.value)} autoComplete="off" data-lpignore="true" />
+                                            <select className={denseInputClass} value={form.malla_no_12_codigo ?? '-'} onChange={(e) => setField('malla_no_12_codigo', e.target.value)}>
+                                                {withCurrentOption(form.malla_no_12_codigo, EQUIPO_OPTIONS.malla_no_12_codigo).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                                            </select>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td className="border-t border-r border-slate-300 px-2 py-1">Máquina Los Ángeles</td>
                                         <td className="border-t border-r border-slate-300 p-1">
-                                            <input className={denseInputClass} value={form.maquina_los_angeles_codigo ?? ''} onChange={(e) => setField('maquina_los_angeles_codigo', e.target.value)} autoComplete="off" data-lpignore="true" />
+                                            <select className={denseInputClass} value={form.maquina_los_angeles_codigo ?? '-'} onChange={(e) => setField('maquina_los_angeles_codigo', e.target.value)}>
+                                                {withCurrentOption(form.maquina_los_angeles_codigo, EQUIPO_OPTIONS.maquina_los_angeles_codigo).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                                            </select>
                                         </td>
                                         <td className="border-t border-r border-slate-300 px-2 py-1">Malla No. 4</td>
                                         <td className="border-t border-slate-300 p-1">
-                                            <input className={denseInputClass} value={form.malla_no_4_codigo ?? ''} onChange={(e) => setField('malla_no_4_codigo', e.target.value)} autoComplete="off" data-lpignore="true" />
+                                            <select className={denseInputClass} value={form.malla_no_4_codigo ?? '-'} onChange={(e) => setField('malla_no_4_codigo', e.target.value)}>
+                                                {withCurrentOption(form.malla_no_4_codigo, EQUIPO_OPTIONS.malla_no_4_codigo).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                                            </select>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td className="border-t border-r border-slate-300 px-2 py-1">Balanza 1g</td>
                                         <td className="border-t border-r border-slate-300 p-1">
-                                            <input className={denseInputClass} value={form.balanza_1g_codigo ?? ''} onChange={(e) => setField('balanza_1g_codigo', e.target.value)} autoComplete="off" data-lpignore="true" />
+                                            <select className={denseInputClass} value={form.balanza_1g_codigo ?? '-'} onChange={(e) => setField('balanza_1g_codigo', e.target.value)}>
+                                                {withCurrentOption(form.balanza_1g_codigo, EQUIPO_OPTIONS.balanza_1g_codigo).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                                            </select>
                                         </td>
                                         <td className="border-t border-r border-slate-300 px-2 py-1"></td>
                                         <td className="border-t border-slate-300 p-1"></td>
@@ -581,7 +614,9 @@ export default function AbraForm() {
                             <div className="overflow-hidden rounded-lg border border-slate-300 bg-slate-50">
                                 <div className="border-b border-slate-300 px-2 py-1 text-sm font-semibold">Revisado:</div>
                                 <div className="space-y-2 p-2">
-                                    <input className={denseInputClass} value={form.revisado_por ?? ''} onChange={(e) => setField('revisado_por', e.target.value)} autoComplete="off" data-lpignore="true" />
+                                    <select className={denseInputClass} value={form.revisado_por ?? '-'} onChange={(e) => setField('revisado_por', e.target.value)}>
+                                        {REVISORES.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                                    </select>
                                     <input
                                         className={denseInputClass}
                                         value={form.revisado_fecha ?? ''}
@@ -596,7 +631,9 @@ export default function AbraForm() {
                             <div className="overflow-hidden rounded-lg border border-slate-300 bg-slate-50">
                                 <div className="border-b border-slate-300 px-2 py-1 text-sm font-semibold">Aprobado:</div>
                                 <div className="space-y-2 p-2">
-                                    <input className={denseInputClass} value={form.aprobado_por ?? ''} onChange={(e) => setField('aprobado_por', e.target.value)} autoComplete="off" data-lpignore="true" />
+                                    <select className={denseInputClass} value={form.aprobado_por ?? '-'} onChange={(e) => setField('aprobado_por', e.target.value)}>
+                                        {APROBADORES.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                                    </select>
                                     <input
                                         className={denseInputClass}
                                         value={form.aprobado_fecha ?? ''}
