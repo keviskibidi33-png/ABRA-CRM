@@ -127,7 +127,7 @@ const getEnsayoId = () => {
 const initialState = (): AbraPayload => ({
     muestra: '',
     numero_ot: '',
-    fecha_ensayo: formatTodayShortDate(),
+    fecha_ensayo: '',
     realizado_por: '',
     masa_muestra_inicial_g: null,
     masa_muestra_inicial_seca_g: null,
