@@ -75,12 +75,12 @@ const parseNum = (v: string) => {
 }
 
 const getCurrentYearShort = () => new Date().getFullYear().toString().slice(-2)
-const formatTodayShortDate = () => {
+const formatTodayYmd = () => {
     const d = new Date()
-    const dd = String(d.getDate()).padStart(2, '0')
+    const yyyy = String(d.getFullYear())
     const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const yy = String(d.getFullYear()).slice(-2)
-    return `${dd}/${mm}/${yy}`
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}/${mm}/${dd}`
 }
 
 const normalizeMuestraCode = (raw: string): string => {
@@ -109,26 +109,32 @@ const normalizeFlexibleDate = (raw: string): string => {
     const value = raw.trim()
     if (!value) return ''
     const digits = value.replace(/\D/g, '')
-    const year = getCurrentYearShort()
+    const currentYear = String(new Date().getFullYear())
     const pad2 = (part: string) => part.padStart(2, '0').slice(-2)
-    const build = (d: string, m: string, y: string = year) => `${pad2(d)}/${pad2(m)}/${pad2(y)}`
-
-    if (value.includes('/')) {
-        const [d = '', m = '', yRaw = ''] = value.split('/').map((part) => part.trim())
-        if (!d || !m) return value
-        let yy = yRaw.replace(/\D/g, '')
-        if (yy.length === 4) yy = yy.slice(-2)
-        if (yy.length === 1) yy = `0${yy}`
-        if (!yy) yy = year
-        return build(d, m, yy)
+    const build = (y: string, m: string, d: string) => `${y}/${pad2(m)}/${pad2(d)}`
+    const normalizeYear = (y: string) => {
+        const clean = y.replace(/\D/g, '')
+        if (clean.length >= 4) return clean.slice(0, 4)
+        if (clean.length === 2) return `20${clean}`
+        if (clean.length === 1) return `200${clean}`
+        return currentYear
     }
 
-    if (digits.length === 2) return build(digits[0], digits[1])
-    if (digits.length === 3) return build(digits[0], digits.slice(1, 3))
-    if (digits.length === 4) return build(digits.slice(0, 2), digits.slice(2, 4))
-    if (digits.length === 5) return build(digits[0], digits.slice(1, 3), digits.slice(3, 5))
-    if (digits.length === 6) return build(digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 6))
-    if (digits.length >= 8) return build(digits.slice(0, 2), digits.slice(2, 4), digits.slice(6, 8))
+    if (value.includes('/')) {
+        const [a = '', b = '', c = ''] = value.split('/').map((part) => part.trim())
+        if (!a || !b) return value
+        if (a.length === 4) return build(normalizeYear(a), b, c || '01')
+        return build(normalizeYear(c), b, a)
+    }
+
+    if (digits.length === 8) {
+        if (digits.startsWith('19') || digits.startsWith('20')) return build(digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8))
+        return build(digits.slice(4, 8), digits.slice(2, 4), digits.slice(0, 2))
+    }
+    if (digits.length === 6) return build(`20${digits.slice(4, 6)}`, digits.slice(2, 4), digits.slice(0, 2))
+    if (digits.length === 4) return build(currentYear, digits.slice(2, 4), digits.slice(0, 2))
+    if (digits.length === 3) return build(currentYear, digits.slice(1, 3), digits.slice(0, 1))
+    if (digits.length === 2) return build(currentYear, digits.slice(1, 2), digits.slice(0, 1))
 
     return value
 }
@@ -166,9 +172,9 @@ const initialState = (): AbraPayload => ({
     malla_no_4_codigo: '-',
     observaciones: '',
     revisado_por: '-',
-    revisado_fecha: formatTodayShortDate(),
+    revisado_fecha: formatTodayYmd(),
     aprobado_por: '-',
-    aprobado_fecha: formatTodayShortDate(),
+    aprobado_fecha: formatTodayYmd(),
 })
 
 export default function AbraForm() {
@@ -343,7 +349,7 @@ export default function AbraForm() {
                                             onBlur={() => setField('fecha_ensayo', normalizeFlexibleDate(form.fecha_ensayo))}
                                             autoComplete="off"
                                             data-lpignore="true"
-                                            placeholder="DD/MM/AA"
+                                            placeholder="AAAA/MM/DD"
                                         />
                                     </td>
                                     <td className="border-t border-slate-300 p-1">
@@ -640,7 +646,7 @@ export default function AbraForm() {
                                         onBlur={() => setField('revisado_fecha', normalizeFlexibleDate(form.revisado_fecha ?? ''))}
                                         autoComplete="off"
                                         data-lpignore="true"
-                                        placeholder="Fecha"
+                                        placeholder="AAAA/MM/DD"
                                     />
                                 </div>
                             </div>
@@ -657,7 +663,7 @@ export default function AbraForm() {
                                         onBlur={() => setField('aprobado_fecha', normalizeFlexibleDate(form.aprobado_fecha ?? ''))}
                                         autoComplete="off"
                                         data-lpignore="true"
-                                        placeholder="Fecha"
+                                        placeholder="AAAA/MM/DD"
                                     />
                                 </div>
                             </div>
