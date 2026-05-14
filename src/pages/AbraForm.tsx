@@ -68,7 +68,7 @@ const TAMIZ_ROWS = [
 
 const EQUIPO_OPTIONS = {
 
-    horno_codigo: ['-', 'EQP-0150'],
+    horno_codigo: ['-', 'EQP-0150', 'EQP-0049'],
 
     maquina_los_angeles_codigo: ['-', 'EQP-0043'],
 
