@@ -159,7 +159,7 @@ const formatTodayYmd = () => {
 
 const parseMuestraCode = (muestra: string, defaultType: 'SU' | 'AG' = 'SU') => {
     const clean = (muestra || '').trim().toUpperCase().replace(/\s+/g, '')
-    const currentYear = '26'
+    const currentYear = new Date().getFullYear().toString().slice(-2)
     if (!clean) return { number: '', type: defaultType, year: currentYear }
 
     const parts = clean.split('-')
@@ -349,14 +349,15 @@ export default function AbraForm() {
 
     const [muestraInput, setMuestraInput] = useState('')
     const [muestraType, setMuestraType] = useState<'SU' | 'AG'>('SU')
+    const [muestraYear, setMuestraYear] = useState(() => new Date().getFullYear().toString().slice(-2))
 
     useEffect(() => {
         if (form.muestra && !muestraInput) {
             const { number, type, year } = parseMuestraCode(form.muestra, 'SU')
-            const currentYear = '26'
-            const displayVal = year && year !== currentYear ? `${number}-${year}` : number
-            setMuestraInput(displayVal)
+            const currentYear = new Date().getFullYear().toString().slice(-2)
+            setMuestraInput(number)
             setMuestraType(type)
+            setMuestraYear(year || currentYear)
         }
     }, [form.muestra, muestraInput])
 
@@ -364,20 +365,34 @@ export default function AbraForm() {
         if (!form.muestra) {
             setMuestraInput('')
             setMuestraType('SU')
+            setMuestraYear(new Date().getFullYear().toString().slice(-2))
         }
     }, [form.muestra])
 
     const handleMuestraInputChange = (val: string) => {
         setMuestraInput(val)
         const { number, year } = parseMuestraCode(val, muestraType)
-        const newCode = buildMuestraCode(number, muestraType, year)
+        const nextYear = year || muestraYear || new Date().getFullYear().toString().slice(-2)
+        setMuestraYear(nextYear)
+        const newCode = buildMuestraCode(number, muestraType, nextYear)
         setField('muestra', newCode)
     }
 
     const handleTypeToggle = (newType: 'SU' | 'AG') => {
         setMuestraType(newType)
         const { number, year } = parseMuestraCode(muestraInput, newType)
-        const newCode = buildMuestraCode(number, newType, year)
+        const nextYear = year || muestraYear || new Date().getFullYear().toString().slice(-2)
+        setMuestraYear(nextYear)
+        const newCode = buildMuestraCode(number, newType, nextYear)
+        setField('muestra', newCode)
+    }
+
+    const handleYearChange = (rawYear: string) => {
+        const cleanedYear = rawYear.replace(/\D/g, '').slice(-2)
+        const nextYear = cleanedYear ? cleanedYear.padStart(2, '0') : new Date().getFullYear().toString().slice(-2)
+        setMuestraYear(nextYear)
+        const { number } = parseMuestraCode(muestraInput, muestraType)
+        const newCode = buildMuestraCode(number, muestraType, nextYear)
         setField('muestra', newCode)
     }
 
@@ -667,19 +682,31 @@ export default function AbraForm() {
                                                 onChange={(e) => handleMuestraInputChange(e.target.value)}
                                                 autoComplete="off"
                                                 data-lpignore="true"
-                                                placeholder={`1234-${muestraType}-${String(new Date().getFullYear()).slice(-2)}`}
+                                                placeholder="1234"
                                             />
-                                            <div className="flex h-9 shrink-0 items-center rounded-md border border-slate-300 bg-white px-1.5">
-                                                <select
-                                                    value={muestraType}
-                                                    onChange={(e) => handleTypeToggle(e.target.value as 'SU' | 'AG')}
-                                                    className="h-7 w-[92px] rounded-md border-0 bg-transparent px-2 text-xs font-bold uppercase text-slate-700 focus:outline-none focus:ring-0"
-                                                    aria-label="Tipo de muestra"
-                                                >
-                                                    <option value="SU">SU</option>
-                                                    <option value="AG">AG</option>
-                                                </select>
-                                            </div>
+                                            <div className="flex h-9 shrink-0 items-center rounded-md border border-slate-300 bg-background px-1.5">
+                                        <select
+                                            value={muestraType}
+                                            onChange={(e) => handleTypeToggle(e.target.value as 'SU' | 'AG')}
+                                            className="h-7 w-[92px] rounded-md border-0 bg-transparent px-2 text-xs font-bold uppercase text-slate-700 focus:outline-none focus:ring-0"
+                                            aria-label="Tipo de muestra"
+                                        >
+                                            <option value="SU">SU</option>
+                                            <option value="AG">AG</option>
+                                        </select>
+                                    </div>
+                                    <span className="shrink-0 text-sm font-semibold text-slate-500">-</span>
+                                    <div className="flex h-9 shrink-0 items-center rounded-md border border-slate-300 bg-background px-1.5">
+                                        <input
+                                            type="text"
+                                            value={muestraYear}
+                                            onChange={(e) => handleYearChange(e.target.value)}
+                                            maxLength={2}
+                                            inputMode="numeric"
+                                            aria-label="Año de muestra"
+                                            className="h-7 w-[56px] rounded-md border-0 bg-transparent px-2 text-center text-xs font-bold text-slate-700 focus:outline-none focus:ring-0"
+                                        />
+                                    </div>
                                         </div>
                                     </td>
 
