@@ -660,38 +660,25 @@ export default function AbraForm() {
                                 <tr>
 
                                     <td className="border-r border-t border-slate-300 p-1">
-                                        <div className="flex items-center gap-1.5 px-0.5">
+                                        <div className="flex min-w-0 items-center gap-1.5 px-0.5">
                                             <input
-                                                className={`${denseInputClass} text-center flex-1 min-w-[70px]`}
+                                                className={`${denseInputClass} min-w-0 flex-1 text-center`}
                                                 value={muestraInput}
                                                 onChange={(e) => handleMuestraInputChange(e.target.value)}
                                                 autoComplete="off"
                                                 data-lpignore="true"
-                                                placeholder="1234"
+                                                placeholder={`1234-${muestraType}-${String(new Date().getFullYear()).slice(-2)}`}
                                             />
-                                            <div className="flex border border-slate-300 rounded overflow-hidden shrink-0 bg-white">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleTypeToggle('SU')}
-                                                    className={`px-2 py-1 text-[11px] font-bold transition-all ${
-                                                        muestraType === 'SU'
-                                                            ? 'bg-slate-900 text-white'
-                                                            : 'bg-white text-slate-600 hover:bg-slate-50'
-                                                    }`}
+                                            <div className="flex h-9 shrink-0 items-center rounded-md border border-slate-300 bg-white px-1.5">
+                                                <select
+                                                    value={muestraType}
+                                                    onChange={(e) => handleTypeToggle(e.target.value as 'SU' | 'AG')}
+                                                    className="h-7 w-[92px] rounded-md border-0 bg-transparent px-2 text-xs font-bold uppercase text-slate-700 focus:outline-none focus:ring-0"
+                                                    aria-label="Tipo de muestra"
                                                 >
-                                                    SU
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleTypeToggle('AG')}
-                                                    className={`px-2 py-1 text-[11px] font-bold border-l border-slate-300 transition-all ${
-                                                        muestraType === 'AG'
-                                                            ? 'bg-slate-900 text-white'
-                                                            : 'bg-white text-slate-600 hover:bg-slate-50'
-                                                    }`}
-                                                >
-                                                    AG
-                                                </button>
+                                                    <option value="SU">SU</option>
+                                                    <option value="AG">AG</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </td>
