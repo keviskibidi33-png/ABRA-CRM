@@ -157,20 +157,48 @@ const formatTodayYmd = () => {
 }
 
 
-const normalizeMuestraCode = (raw: string): string => {
+const parseMuestraCode = (muestra: string, defaultType: 'SU' | 'AG' = 'SU') => {
+    const clean = (muestra || '').trim().toUpperCase().replace(/\s+/g, '')
+    const currentYear = '26'
+    if (!clean) return { number: '', type: defaultType, year: currentYear }
 
-    const value = raw.trim().toUpperCase()
+    const parts = clean.split('-')
+    
+    let type: 'SU' | 'AG' = defaultType
+    if (clean.includes('-SU')) {
+        type = 'SU'
+    } else if (clean.includes('-AG')) {
+        type = 'AG'
+    }
 
-    if (!value) return ''
+    const filteredParts = parts.filter(p => p !== 'SU' && p !== 'AG')
 
-    const compact = value.replace(/\s+/g, '')
+    let number = ''
+    let year = currentYear
 
-    const year = getCurrentYearShort()
+    if (filteredParts.length === 0) {
+        return { number: '', type, year }
+    }
 
-    const match = compact.match(/^(\d+)(?:-SU)?(?:-(\d{2}))?$/)
+    if (filteredParts.length === 1) {
+        number = filteredParts[0]
+    } else {
+        const last = filteredParts[filteredParts.length - 1]
+        if (/^\d{2,4}$/.test(last)) {
+            year = last.slice(-2)
+            number = filteredParts.slice(0, -1).join('-')
+        } else {
+            number = filteredParts.join('-')
+        }
+    }
 
-    return match ? `${match[1]}-SU-${match[2] || year}` : value
+    return { number, type, year }
+}
 
+const buildMuestraCode = (number: string, type: 'SU' | 'AG', year: string) => {
+    const cleanNum = number.trim()
+    if (!cleanNum) return ''
+    return `${cleanNum}-${type}-${year}`
 }
 
 
@@ -318,6 +346,40 @@ export default function AbraForm() {
     const [loadingEdit, setLoadingEdit] = useState(false)
 
     const [ensayoId, setEnsayoId] = useState<number | null>(() => getEnsayoId())
+
+    const [muestraInput, setMuestraInput] = useState('')
+    const [muestraType, setMuestraType] = useState<'SU' | 'AG'>('SU')
+
+    useEffect(() => {
+        if (form.muestra && !muestraInput) {
+            const { number, type, year } = parseMuestraCode(form.muestra, 'SU')
+            const currentYear = '26'
+            const displayVal = year && year !== currentYear ? `${number}-${year}` : number
+            setMuestraInput(displayVal)
+            setMuestraType(type)
+        }
+    }, [form.muestra, muestraInput])
+
+    useEffect(() => {
+        if (!form.muestra) {
+            setMuestraInput('')
+            setMuestraType('SU')
+        }
+    }, [form.muestra])
+
+    const handleMuestraInputChange = (val: string) => {
+        setMuestraInput(val)
+        const { number, year } = parseMuestraCode(val, muestraType)
+        const newCode = buildMuestraCode(number, muestraType, year)
+        setField('muestra', newCode)
+    }
+
+    const handleTypeToggle = (newType: 'SU' | 'AG') => {
+        setMuestraType(newType)
+        const { number, year } = parseMuestraCode(muestraInput, newType)
+        const newCode = buildMuestraCode(number, newType, year)
+        setField('muestra', newCode)
+    }
 
 
 
@@ -598,22 +660,40 @@ export default function AbraForm() {
                                 <tr>
 
                                     <td className="border-r border-t border-slate-300 p-1">
-
-                                        <input
-
-                                            className={`${denseInputClass} text-center`}
-                                            value={form.muestra}
-
-                                            onChange={(e) => setField('muestra', e.target.value)}
-
-                                            onBlur={() => setField('muestra', normalizeMuestraCode(form.muestra))}
-
-                                            autoComplete="off"
-
-                                            data-lpignore="true"
-
-                                        />
-
+                                        <div className="flex items-center gap-1.5 px-0.5">
+                                            <input
+                                                className={`${denseInputClass} text-center flex-1 min-w-[70px]`}
+                                                value={muestraInput}
+                                                onChange={(e) => handleMuestraInputChange(e.target.value)}
+                                                autoComplete="off"
+                                                data-lpignore="true"
+                                                placeholder="1234"
+                                            />
+                                            <div className="flex border border-slate-300 rounded overflow-hidden shrink-0 bg-white">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleTypeToggle('SU')}
+                                                    className={`px-2 py-1 text-[11px] font-bold transition-all ${
+                                                        muestraType === 'SU'
+                                                            ? 'bg-slate-900 text-white'
+                                                            : 'bg-white text-slate-600 hover:bg-slate-50'
+                                                    }`}
+                                                >
+                                                    SU
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleTypeToggle('AG')}
+                                                    className={`px-2 py-1 text-[11px] font-bold border-l border-slate-300 transition-all ${
+                                                        muestraType === 'AG'
+                                                            ? 'bg-slate-900 text-white'
+                                                            : 'bg-white text-slate-600 hover:bg-slate-50'
+                                                    }`}
+                                                >
+                                                    AG
+                                                </button>
+                                            </div>
+                                        </div>
                                     </td>
 
                                     <td className="border-r border-t border-slate-300 p-1">
@@ -1382,7 +1462,7 @@ export default function AbraForm() {
 
                 open={pendingFormatAction !== null}
 
-                formatLabel={buildFormatPreview(form.muestra, 'AG', 'ABRA')}
+                formatLabel={buildFormatPreview(form.muestra, muestraType, 'ABRA')}
 
                 actionLabel={pendingFormatAction ? 'Guardar y Descargar' : 'Guardar'}
 
