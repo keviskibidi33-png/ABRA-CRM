@@ -555,9 +555,11 @@ export default function AbraForm() {
 
         try {
 
+            let savedId = ensayoId
+
             if (download) {
 
-                const { blob, filename } = await saveAndDownloadAbraExcel(form, ensayoId ?? undefined)
+                const { blob, ensayoId: returnedId, filename } = await saveAndDownloadAbraExcel(form, ensayoId ?? undefined)
 
                 const url = URL.createObjectURL(blob)
 
@@ -571,21 +573,29 @@ export default function AbraForm() {
 
                 URL.revokeObjectURL(url)
 
+                if (returnedId) savedId = returnedId
+
             } else {
 
-                await saveAbraEnsayo(form, ensayoId ?? undefined)
+                const saved = await saveAbraEnsayo(form, ensayoId ?? undefined)
 
+                savedId = saved.id
+
+            }
+
+            if (savedId && savedId !== ensayoId) {
+                setEnsayoId(savedId)
+                localStorage.removeItem(`${DRAFT_KEY}:new`)
+                const newUrl = new URL(window.location.href)
+                newUrl.searchParams.set('ensayo_id', String(savedId))
+                window.history.replaceState(null, '', newUrl.toString())
             }
 
             localStorage.removeItem(`${DRAFT_KEY}:${ensayoId ?? 'new'}`)
 
-            setForm(initialState())
-
-            setEnsayoId(null)
-
-            if (window.parent !== window) window.parent.postMessage({ type: 'CLOSE_MODAL' }, '*')
-
             toast.success(download ? 'ABRA guardado y descargado.' : 'ABRA guardado.')
+
+            if (window.parent !== window) window.parent.postMessage({ type: 'ENSAYO_SAVED' }, '*')
 
         } catch (err) {
 
